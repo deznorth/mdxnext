@@ -1,4 +1,4 @@
-import fs from 'fs'
+import { promises as fs } from 'fs'
 import matter from 'gray-matter'
 import { MDXRemote } from 'next-mdx-remote'
 import { serialize } from 'next-mdx-remote/serialize'
@@ -59,11 +59,11 @@ export default function PostPage({ source, frontMatter }) {
   )
 }
 
-export const getStaticProps = async ({ params }) => {
-  const postFilePath = path.join(POSTS_PATH, `${params.slug}.mdx`)
-  const source = fs.readFileSync(postFilePath)
+export const getStaticProps = async ({ params, locale }) => {
+  const postFilePath = path.join(POSTS_PATH, params.slug, `index${locale !== 'en' ? `.${locale}` : ''}.mdx`);
+  const source = await fs.readFile(postFilePath);
 
-  const { content, data } = matter(source)
+  const { content, data } = matter(source);
 
   const mdxSource = await serialize(content, {
     // Optionally pass remark/rehype plugins
@@ -72,25 +72,32 @@ export const getStaticProps = async ({ params }) => {
       rehypePlugins: [],
     },
     scope: data,
-  })
+  });
 
   return {
     props: {
       source: mdxSource,
       frontMatter: data,
     },
-  }
-}
+    revalidate: 15,
+  };
+};
 
-export const getStaticPaths = async () => {
-  const paths = postFilePaths
-    // Remove file extensions for page paths
-    .map((path) => path.replace(/\.mdx?$/, ''))
-    // Map the path into the static paths object required by Next.js
-    .map((slug) => ({ params: { slug } }))
+export const getStaticPaths = async ({ locales }) => {
+  const paths = [];
+
+  for (const locale of locales) {
+    for (const filePath of postFilePaths) {
+      const fullPath = path.join(POSTS_PATH, filePath, `index${locale !== 'en' ? `.${locale}` : ''}.mdx`);
+      fs.access(fullPath).then(
+        () => paths.push({ params: { slug: path }, locale }),
+        () => null
+      );
+    }
+  }
 
   return {
     paths,
-    fallback: false,
+    fallback: 'blocking',
   }
 }

@@ -1,4 +1,4 @@
-import fs from 'fs'
+import { promises as fs } from 'fs'
 import matter from 'gray-matter'
 import Link from 'next/link'
 import path from 'path'
@@ -17,7 +17,7 @@ export default function Index({ posts }) {
         {posts.map((post) => (
           <li key={post.filePath}>
             <Link
-              as={`/posts/${post.filePath.replace(/\.mdx?$/, '')}`}
+              as={`/posts/${post.filePath}`}
               href={`/posts/[slug]`}
             >
               <a>{post.data.title}</a>
@@ -29,17 +29,24 @@ export default function Index({ posts }) {
   )
 }
 
-export function getStaticProps() {
+export function getStaticProps({ locale }) {
   const posts = postFilePaths.map((filePath) => {
-    const source = fs.readFileSync(path.join(POSTS_PATH, filePath))
-    const { content, data } = matter(source)
+    let result = null;
+    fs.readFile(path.join(POSTS_PATH, filePath, `index${locale !== 'en' ? `.${locale}` : ''}.mdx`)).then(
+      source => {
+        const { content, data } = matter(source)
 
-    return {
-      content,
-      data,
-      filePath,
-    }
-  })
+        result = {
+          content,
+          data,
+          filePath,
+        };
+      },
+      () => null,
+    );
 
-  return { props: { posts } }
+    return result;
+  }).filter(p => p !== null);
+
+  return { props: { posts }, revalidate: 10 }
 }
