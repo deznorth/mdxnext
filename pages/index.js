@@ -29,24 +29,21 @@ export default function Index({ posts }) {
   )
 }
 
-export function getStaticProps({ locale }) {
-  const posts = postFilePaths.map((filePath) => {
-    let result = null;
-    fs.readFile(path.join(POSTS_PATH, filePath, `index${locale !== 'en' ? `.${locale}` : ''}.mdx`)).then(
-      source => {
-        const { content, data } = matter(source)
+export async function getStaticProps({ locale }) {
+  const posts = (await Promise.all(postFilePaths.map(async (filePath) => {
+    try {
+      const source = await fs.readFile(path.join(POSTS_PATH, filePath, `index${locale !== 'en' ? `.${locale}` : ''}.mdx`));
+      const { content, data } = matter(source);
 
-        result = {
-          content,
-          data,
-          filePath,
-        };
-      },
-      () => null,
-    );
-
-    return result;
-  }).filter(p => p !== null);
+      return {
+        content,
+        data,
+        filePath,
+      };
+    } catch (err) {
+      return null;
+    }
+  }))).filter(p => p !== null);
 
   return { props: { posts }, revalidate: 10 }
 }

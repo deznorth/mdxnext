@@ -1,4 +1,5 @@
 import { promises as fs } from 'fs'
+import { useRouter } from 'next/router'
 import matter from 'gray-matter'
 import { MDXRemote } from 'next-mdx-remote'
 import { serialize } from 'next-mdx-remote/serialize'
@@ -24,6 +25,12 @@ const components = {
 }
 
 export default function PostPage({ source, frontMatter }) {
+  const router = useRouter();
+
+  if (router.isFallback) {
+    return <div>Loading...</div>
+  }
+
   return (
     <Layout>
       <header>
@@ -98,6 +105,6 @@ export const getStaticPaths = async ({ locales }) => {
 
   return {
     paths,
-    fallback: 'blocking',
+    fallback: true,
   }
 }
