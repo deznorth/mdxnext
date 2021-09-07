@@ -1,5 +1,4 @@
-// const execProcess = require('../../utils/execProcess');
-const simpleGit = require('simple-git')();
+const simpleGit = require('simple-git')(process.cwd());
 const BRANCH = 'main';
 
 export default function handler(req, res) {
@@ -26,8 +25,7 @@ export default function handler(req, res) {
 
 const triggerUpdate = () => {
   simpleGit.subModule(['status']).then(r => console.log(r));
-  simpleGit.submoduleUpdate(['--checkout', '--merge', 'posts']).then(
-    response => console.log(response),
+  simpleGit.submoduleUpdate(['--remote', '--merge', 'posts']).catch(
     err => console.log(err)
   );
 };
