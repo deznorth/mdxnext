@@ -1,4 +1,5 @@
-const execProcess = require('../../utils/execProcess');
+// const execProcess = require('../../utils/execProcess');
+const simpleGit = require('simple-git')();
 const BRANCH = 'main';
 
 export default function handler(req, res) {
@@ -24,12 +25,9 @@ export default function handler(req, res) {
 }
 
 const triggerUpdate = () => {
-  const command = process.platform === 'win32' ? `cmd.exe /c ${process.cwd()}\\utils\\updater.bat` : 'sh ../../utils/updater.sh';
-  execProcess.result(command, function(err, response){
-    if(!err){
-        console.log(response);
-    }else {
-        console.log(err);
-    }
-});
+  simpleGit.subModule(['status']).then(r => console.log(r));
+  simpleGit.submoduleUpdate(['--checkout', '--merge', 'posts']).then(
+    response => console.log(response),
+    err => console.log(err)
+  );
 };
